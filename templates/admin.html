@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card">
+    <span class="badge">Администратор</span>
+    <h2>Управление системой</h2>
+</div>
+
+{% if notes %}
+<div class="card">
+    <h3>Уведомления</h3>
+    {% for n in notes %}
+        <div class="notice">{{ n["message"] }} <span class="text-muted">({{ n["created_at"] }})</span></div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="grid">
+    <div class="card">
+        <h3>Платежи</h3>
+        <div>Количество оплат: <strong>{{ payment_stats["payments_count"] }}</strong></div>
+        <div>Сумма оплат: <strong>{{ payment_stats["payments_total"] }} ₽</strong></div>
+        <div>Оформлено абонементов: <strong>{{ payment_stats["subs_count"] }}</strong></div>
+    </div>
+
+    <div class="card">
+        <h3>Питание</h3>
+        <div>Получено блюд (отметки): <strong>{{ attendance_stats["total_meals"] }}</strong></div>
+        <div>Получено сегодня: <strong>{{ attendance_stats["today_meals"] }}</strong></div>
+        <div>Выдано поваром (всего): <strong>{{ issued_stats["issued_total"] }}</strong></div>
+    </div>
+
+    <div class="card">
+        <h3>Закупки</h3>
+        <div>Ожидают согласования: <strong>{{ purchase_stats["pending_count"] }}</strong></div>
+        <div>Подтвержденные затраты: <strong>{{ purchase_stats["approved_costs"] }} ₽</strong></div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Заявки на закупку</h3>
+    {% if req %}
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Продукт</th>
+                <th>Количество</th>
+                <th>Стоимость</th>
+                <th>Статус</th>
+                <th>Действие</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in req %}
+            <tr>
+                <td>{{ r["id"] }}</td>
+                <td>{{ r["product"] }}</td>
+                <td>{{ r["quantity"] }}</td>
+                <td>{{ r["estimated_cost"] or 0 }} ₽</td>
+                <td>{{ r["status"] }}</td>
+                <td>
+                    {% if r["status"] == "ожидает" %}
+                        <div class="split">
+                            <a href="/approve/{{ r['id'] }}"><button class="btn-success">Одобрить</button></a>
+                            <a href="/reject/{{ r['id'] }}"><button class="btn-danger">Отклонить</button></a>
+                        </div>
+                    {% elif r["status"] == "одобрено" %}
+                        <span class="text-success">Одобрено</span>
+                    {% else %}
+                        <span class="text-danger">Отклонено</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <div class="text-muted">Заявок нет.</div>
+    {% endif %}
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h3>Статистика посещаемости (последние 7 дат)</h3>
+        {% if attendance_daily %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Получено блюд</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in attendance_daily %}
+                <tr>
+                    <td>{{ row["date"] }}</td>
+                    <td>{{ row["cnt"] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <div class="text-muted">Данных пока нет.</div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h3>Питание по блюдам</h3>
+        {% if nutrition_by_dish %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Блюдо</th>
+                    <th>Тип</th>
+                    <th>Отметки учеников</th>
+                    <th>Выдано поваром</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in nutrition_by_dish %}
+                <tr>
+                    <td>{{ row["name"] }}</td>
+                    <td>{{ row["type"] }}</td>
+                    <td>{{ row["student_marks"] }}</td>
+                    <td>{{ row["cook_issued"] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <div class="text-muted">Данных пока нет.</div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <h3>Отчет по питанию и затратам</h3>
+    <p class="text-muted">CSV содержит сводку платежей, посещаемости, выдачи поваром и закупок.</p>
+    <a href="/report"><button>Скачать отчет</button></a>
+</div>
+
+{% endblock %}
