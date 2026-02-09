@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card">
+    <span class="badge">Повар</span>
+    <h2>Панель повара</h2>
+</div>
+
+{% if notes %}
+<div class="card">
+    <h3>Уведомления</h3>
+    {% for n in notes %}
+        <div class="notice">{{ n["message"] }} <span class="text-muted">({{ n["created_at"] }})</span></div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="grid">
+    <div class="card">
+        <h3>Учет выданных блюд</h3>
+        <form method="post" action="/cook/issue">
+            <label>Блюдо</label>
+            <select name="menu_id" required>
+                {% for m in menu %}
+                    <option value="{{ m['id'] }}">{{ m["type"] }}: {{ m["name"] }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Выдано порций</label>
+            <input name="quantity" type="number" min="1" required>
+
+            <button type="submit" class="btn-success">Зафиксировать выдачу</button>
+        </form>
+
+        <h3 style="margin-top:16px;">Выдано сегодня</h3>
+        {% if issued_today %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Блюдо</th>
+                        <th>Тип</th>
+                        <th>Порций</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in issued_today %}
+                    <tr>
+                        <td>{{ row["name"] }}</td>
+                        <td>{{ row["type"] }}</td>
+                        <td>{{ row["qty"] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="text-muted">Сегодня выдача еще не фиксировалась.</div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h3>Остатки готовых блюд</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Блюдо</th>
+                    <th>Тип</th>
+                    <th>Порций</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in dish_stock %}
+                <tr>
+                    <td>{{ d["name"] }}</td>
+                    <td>{{ d["type"] }}</td>
+                    <td>
+                        {% if d["portions"] > 0 %}
+                            <span class="text-success">{{ d["portions"] }}</span>
+                        {% else %}
+                            <span class="text-danger">0</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <form method="post" action="/cook/dish_stock" style="margin-top:12px;">
+            <label>Блюдо</label>
+            <select name="menu_id" required>
+                {% for m in menu %}
+                    <option value="{{ m['id'] }}">{{ m["type"] }}: {{ m["name"] }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Установить порции</label>
+            <input type="number" name="portions" min="0" required>
+
+            <button type="submit">Обновить остаток блюд</button>
+        </form>
+    </div>
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h3>Склад продуктов</h3>
+        {% if products %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Продукт</th>
+                        <th>Остаток</th>
+                        <th>Порог</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in products %}
+                    <tr>
+                        <td>{{ p["name"] }}</td>
+                        <td>
+                            {% if p["quantity"] <= p["low_threshold"] %}
+                                <span class="text-danger">{{ p["quantity"] }} {{ p["unit"] }}</span>
+                            {% else %}
+                                <span class="text-success">{{ p["quantity"] }} {{ p["unit"] }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ p["low_threshold"] }} {{ p["unit"] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="text-muted">Склад пуст.</div>
+        {% endif %}
+
+        <form method="post" action="/cook/product" style="margin-top:12px;">
+            <label>Продукт</label>
+            <input name="name" required>
+
+            <label>Режим обновления</label>
+            <select name="mode">
+                <option value="add">Добавить к остатку</option>
+                <option value="set">Установить остаток</option>
+            </select>
+
+            <label>Количество</label>
+            <input name="quantity" type="number" min="0" required>
+
+            <label>Единица измерения</label>
+            <input name="unit" value="шт">
+
+            <label>Порог низкого остатка</label>
+            <input name="low_threshold" type="number" min="0" value="5" required>
+
+            <button type="submit">Обновить склад</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>Заявка на закупку</h3>
+        <form method="post" action="/cook/purchase">
+            <label>Продукт</label>
+            <input name="product" required>
+
+            <label>Количество</label>
+            <input name="quantity" type="number" min="1" required>
+
+            <label>Оценочная стоимость, ₽</label>
+            <input name="estimated_cost" type="number" min="0" step="0.01" value="0">
+
+            <button type="submit" class="btn-warning">Отправить заявку</button>
+        </form>
+
+        <h3 style="margin-top:16px;">Последние заявки</h3>
+        {% if requests %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Продукт</th>
+                        <th>Кол-во</th>
+                        <th>Стоимость</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in requests %}
+                    <tr>
+                        <td>{{ r["product"] }}</td>
+                        <td>{{ r["quantity"] }}</td>
+                        <td>{{ r["estimated_cost"] or 0 }} ₽</td>
+                        <td>{{ r["status"] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="text-muted">Заявок пока нет.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
