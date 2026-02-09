@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% if error %}
+<div class="card text-danger">{{ error }}</div>
+{% endif %}
+
+<div class="card">
+    <h2>Вход в систему</h2>
+    <form method="post">
+        <label>Логин</label>
+        <input name="login" required>
+
+        <label>Пароль</label>
+        <input type="password" name="password" required>
+
+        <label>Роль</label>
+        <select name="role" required>
+            <option value="student">Ученик</option>
+            <option value="cook">Повар</option>
+            <option value="admin">Администратор</option>
+        </select>
+
+        <button type="submit">Войти</button>
+    </form>
+</div>
+
+{% endblock %}
