@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card">
+    <span class="badge">Ученик</span>
+    <h2>Личный кабинет</h2>
+    <div class="text-muted">Дата: {{ today }}</div>
+</div>
+
+{% if notes %}
+<div class="card">
+    <h3>Уведомления</h3>
+    {% for n in notes %}
+        <div class="notice">{{ n["message"] }} <span class="text-muted">({{ n["created_at"] }})</span></div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+    <h3>Пищевые особенности</h3>
+    <form method="post" action="/student/profile">
+        <label>Аллергии</label>
+        <input name="allergies" value="{{ student['allergies'] or '' }}" placeholder="Например: молоко, орехи">
+
+        <label>Предпочтения</label>
+        <input name="preferences" value="{{ student['preferences'] or '' }}" placeholder="Например: без свинины">
+
+        <button type="submit">Сохранить профиль</button>
+    </form>
+</div>
+
+<div class="card">
+    <h3>Меню завтраков и обедов</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Блюдо</th>
+                <th>Тип</th>
+                <th>Цена</th>
+                <th>Аллергены</th>
+                <th>Порций в наличии</th>
+                <th>Оценка</th>
+                <th>Действие</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in menu %}
+            <tr>
+                <td>{{ m["name"] }}</td>
+                <td>{{ m["type"] }}</td>
+                <td>{{ m["price"] }} ₽</td>
+                <td>{{ m["allergens"] or "нет" }}</td>
+                <td>
+                    {% if m["portions"] > 0 %}
+                        <span class="text-success">{{ m["portions"] }}</span>
+                    {% else %}
+                        <span class="text-danger">0</span>
+                    {% endif %}
+                </td>
+                <td>{{ m["avg_rating"] }} ({{ m["review_count"] }})</td>
+                <td>
+                    <form method="post" action="/eat">
+                        <input type="hidden" name="menu_id" value="{{ m['id'] }}">
+                        <button type="submit" {% if m["portions"] <= 0 %}disabled{% endif %}>Отметить получение</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h3>Оплата питания</h3>
+        <form method="post" action="/pay">
+            <label>Сумма, ₽</label>
+            <input name="amount" type="number" min="1" required>
+            <button type="submit">Оплатить разово</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>Абонемент</h3>
+        <p class="text-muted">Стоимость месячного абонемента: 2500 ₽</p>
+        <form method="post" action="/subscribe">
+            <button type="submit" class="btn-success">Оформить абонемент</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Ваши отметки о питании за сегодня</h3>
+    {% if today_records %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Блюдо</th>
+                    <th>Тип</th>
+                    <th>Статус</th>
+                    <th>Действие</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in today_records %}
+                <tr>
+                    <td>{{ r["dish_name"] or "-" }}</td>
+                    <td>{{ r["dish_type"] or "-" }}</td>
+                    <td>{{ r["status"] }}</td>
+                    <td>
+                        {% if r["status"] == "получено" %}
+                        <form method="post" action="/cancel_eat">
+                            <input type="hidden" name="attendance_id" value="{{ r['id'] }}">
+                            <button type="submit" class="btn-danger">Отменить</button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="text-muted">Сегодня отметок пока нет.</div>
+    {% endif %}
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h3>Оставить отзыв о блюде</h3>
+        <form method="post" action="/review">
+            <label>Блюдо</label>
+            <select name="menu_id" required>
+                {% for m in menu %}
+                    <option value="{{ m['id'] }}">{{ m["type"] }}: {{ m["name"] }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Оценка</label>
+            <select name="rating" required>
+                <option value="5">5</option>
+                <option value="4">4</option>
+                <option value="3">3</option>
+                <option value="2">2</option>
+                <option value="1">1</option>
+            </select>
+
+            <label>Комментарий</label>
+            <textarea name="comment" placeholder="Что понравилось или что нужно улучшить"></textarea>
+
+            <button type="submit">Отправить отзыв</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h3>Последние отзывы</h3>
+        {% if reviews %}
+            {% for rv in reviews %}
+                <div class="notice">
+                    <strong>{{ rv["dish_name"] }}</strong>: {{ rv["rating"] }}/5<br>
+                    {{ rv["comment"] or "Без комментария" }}<br>
+                    <span class="text-muted">{{ rv["author"] }}, {{ rv["created_at"] }}</span>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-muted">Отзывов пока нет.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% if error %}
+<div class="card text-danger">{{ error }}</div>
+{% endif %}
+
+<div class="card">
+    <h2>Регистрация</h2>
+
+    <form method="post">
+        <label>Логин</label>
+        <input name="login" required>
+
+        <label>Пароль</label>
+        <input type="password" name="password" required>
+
+        <label>Роль</label>
+        <select name="role" required>
+            <option value="student">Ученик</option>
+            <option value="cook">Повар</option>
+            <option value="admin">Администратор</option>
+        </select>
+
+        <label>Пищевые аллергии (для ученика)</label>
+        <input name="allergies" placeholder="Например: молоко, орехи">
+
+        <label>Пищевые предпочтения (для ученика)</label>
+        <input name="preferences" placeholder="Например: без свинины">
+
+        <button type="submit">Создать аккаунт</button>
+    </form>
+</div>
+
+{% endblock %}
